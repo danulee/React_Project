@@ -1,80 +1,61 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useRef } from "react";
 
 import "./App.css";
 
-function isPrimeNumber(no) {
-  for (let i = 2; i < no; i++) {
-    if (i * i > no) {
-      break;
-    }
-
-    if (no % i == 0) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function getPrimeNumbers(max) {
-  const primeNumbers = [];
-
-  for (let i = 2; i <= max; i++) {
-    if (isPrimeNumber(i)) {
-      primeNumbers.push(i);
-    }
-  }
-
-  return primeNumbers;
-}
-
-function getPrimeNumbersCount(max) {
-  return getPrimeNumbers(max).length;
-}
-
-let AppCallCount = 0;
-
 function App() {
-  AppCallCount++;
-  console.log(`AppCallCount : ${AppCallCount}`);
-  const [inputedNo, setInputedNo] = useState(0);
-  const [no, setNo] = useState(0);
+  const [todos, setTodos] = useState([]);
+  const lastTodoIdRef = useRef(0);
 
-  const primeNumbersCount = useMemo(
-    () => getPrimeNumbersCount(inputedNo),
-    [inputedNo]
-  );
+  const addTodo = (newContent) => {
+    const id = ++lastTodoIdRef.current;
 
-  const onSubmit = (e) => {
-    e.preventDefault();
+    const newTodo = {
+      id,
+      content: newContent,
+      regDate: "2023-01-17 12:12:12",
+    };
 
-    const form = e.target;
+    const newTodos = [...todos, newTodo];
+    setTodos(newTodos);
+  };
 
-    form.number.value = form.number.value.trim();
+  const modifyTodo = (index, newContent) => {
+    const newTodos = todos.map((todo, _index) =>
+      _index != index ? todo : { ...todo, content: newContent }
+    );
+    setTodos(newTodos);
+  };
 
-    if (form.number.value.length == 0) {
-      alert("숫자를 입력해주세요.");
-      form.number.focus();
-      return;
-    }
+  const removeTodo = (index) => {
+    const newTodos = todos.filter((_, _index) => _index != index);
+    setTodos(newTodos);
+  };
 
-    const number = form.number.valueAsNumber;
-    form.number.focus();
+  const onBtnAddTodoClick = () => {
+    addTodo("안녕");
+  };
 
-    setInputedNo(number);
+  const onBtnDeleteTodoClick = () => {
+    removeTodo(1);
+  };
+
+  const onBtnModifyTodoClick = () => {
+    modifyTodo(1, "ㅋㅋㅋ");
   };
 
   return (
     <>
-      <button onClick={() => setNo(no + 1)}>번호 : {no}</button>
+      <button onClick={onBtnAddTodoClick}>추가</button>
+      <button onClick={onBtnDeleteTodoClick}>삭제</button>
+      <button onClick={onBtnModifyTodoClick}>수정</button>
       <hr />
-      <form onSubmit={onSubmit}>
-        <input type="number" name="number" placeholder="숫자를 입력해주세요" />
-        <input type="submit" value="확인" />
-        <hr />
-        <div>MAX : {inputedNo}</div>
-        <div>소수의 개수 : {primeNumbersCount}</div>
-      </form>
+      <ul>
+        {todos.map((todo, index) => (
+          <li key={index}>
+            {todo.id} {todo.content} {todo.regDate}
+          </li>
+        ))}
+      </ul>
     </>
   );
 }
