@@ -4,6 +4,10 @@ import React, { useState, useRef } from "https://cdn.skypack.dev/react";
 import ReactDOM from "https://cdn.skypack.dev/react-dom";
 
 function TodoListItem({todosState, todo, index}) {
+  const removeTodo = () => {
+    todosState.removeTodo(index);
+  }
+  
   return (
     <li>
       {todo.id}
@@ -11,6 +15,8 @@ function TodoListItem({todosState, todo, index}) {
       {todo.regDate}
       &nbsp;
       {todo.content}
+      &nbsp;
+      <button onClick={removeTodo}>삭제</button>
     </li>
   )
 }
@@ -19,7 +25,7 @@ function TodoList({ todosState }) {
   return (
     <ul>
       {todosState.todos.map((todo, index) => (
-        <TodoListItem key={todo.id} todo={todo} index={index} />
+        <TodoListItem todosState={todosState} key={todo.id} todo={todo} index={index} />
       ))}
     </ul>
   );
