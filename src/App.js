@@ -3,32 +3,68 @@ console.clear();
 import React, { useState, useRef } from "https://cdn.skypack.dev/react";
 import ReactDOM from "https://cdn.skypack.dev/react-dom";
 
-function TodoApp({ todosState }) {
-  const onBtnAddTodoClick = () => {
-    todosState.addTodo("안녕");
-  };
+function TodoListItem({todosState, todo, index}) {
+  return (
+    <li>
+      {todo.id}
+      &nbsp;
+      {todo.regDate}
+      &nbsp;
+      {todo.content}
+    </li>
+  )
+}
 
-  const onBtnDeleteTodoClick = () => {
-    todosState.removeTodo(1);
-  };
+function TodoList({ todosState }) {
+  return (
+    <ul>
+      {todosState.todos.map((todo, index) => (
+        <TodoListItem key={todo.id} todo={todo} index={index} />
+      ))}
+    </ul>
+  );
+}
 
-  const onBtnModifyTodoClick = () => {
-    todosState.modifyTodo(1, "ㅋㅋㅋ");
+function NewTodoForm({ todosState }) {
+  const onSubmit = (e) => {
+    e.preventDefault();
+
+    const form = e.target;
+
+    form.content.value = form.content.value.trim();
+
+    if (form.content.value.length == 0) {
+      alert("할일을 입력해주세요.");
+      form.content.focus();
+
+      return;
+    }
+
+    todosState.addTodo(form.content.value);
+    form.content.value = "";
+    form.content.focus();
   };
 
   return (
+    <form onSubmit={onSubmit}>
+      <input
+        autoComplete="off"
+        name="content"
+        type="text"
+        placeholder="할일을 입력해주세요."
+        />
+      <input type="submit" value="추가" />
+      <input type="reset" value="취소" />
+    </form>
+  );
+}
+
+function TodoApp({ todosState }) {
+  return (
     <>
-      <button onClick={onBtnAddTodoClick}>추가</button>
-      <button onClick={onBtnDeleteTodoClick}>삭제</button>
-      <button onClick={onBtnModifyTodoClick}>수정</button>
+      <NewTodoForm todosState={todosState} />
       <hr />
-      <ul>
-        {todosState.todos.map((todo, index) => (
-          <li key={index}>
-            {todo.id} {todo.regDate} {todo.content}
-          </li>
-        ))}
-      </ul>
+      <TodoList todosState={todosState} />
     </>
   );
 }
@@ -43,7 +79,7 @@ function useTodosState() {
     const newTodo = {
       id,
       content: newContent,
-      regDate: "2023-01-17 12:12:12"
+      regDate: dateToStr(new Date())
     };
 
     const newTodos = [...todos, newTodo];
@@ -52,8 +88,8 @@ function useTodosState() {
 
   const modifyTodo = (index, newContent) => {
     const newTodos = todos.map((todo, _index) =>
-      _index != index ? todo : { ...todo, content: newContent }
-    );
+                               _index != index ? todo : { ...todo, content: newContent }
+                              );
     setTodos(newTodos);
   };
 
@@ -81,3 +117,26 @@ function App() {
 }
 
 ReactDOM.render(<App />, document.getElementById("root"));
+
+// 유틸리티
+
+// 날짜 객체 입력받아서 문장(yyyy-mm-dd hh:mm:ss)으로 반환한다.
+function dateToStr(d) {
+  const pad = (n) => {
+    return n < 10 ? "0" + n : n;
+  };
+
+  return (
+    d.getFullYear() +
+    "-" +
+    pad(d.getMonth() + 1) +
+    "-" +
+    pad(d.getDate()) +
+    " " +
+    pad(d.getHours()) +
+    ":" +
+    pad(d.getMinutes()) +
+    ":" +
+    pad(d.getSeconds())
+  );
+}
