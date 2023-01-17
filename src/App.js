@@ -3,29 +3,80 @@ console.clear();
 import React, { useState, useRef } from "https://cdn.skypack.dev/react";
 import ReactDOM from "https://cdn.skypack.dev/react-dom";
 
-function TodoListItem({todosState, todo, index}) {
+function TodoListItem({ todosState, todo, index }) {
+  const [editMode, setEditMode] = useState(false);
+  const [editedContent, setEditedContent] = useState(todo.content);
+  const editedContentInputRef = useRef(null);
+
   const removeTodo = () => {
     todosState.removeTodo(index);
-  }
-  
+  };
+
+  const showEdit = () => {
+    setEditMode(true);
+  };
+
+  const commitEdit = () => {
+    if (editedContent.trim().length == 0) {
+      alert("할일을 입력해주세요.");
+      editedContentInputRef.current.focus();
+      return;
+    }
+
+    todosState.modifyTodo(index, editedContent.trim());
+
+    setEditMode(false);
+  };
+
+  const cancelEdit = () => {
+    setEditMode(false);
+    setEditedContent(todo.content);
+  };
+
   return (
     <li>
       {todo.id}
       &nbsp;
       {todo.regDate}
       &nbsp;
-      {todo.content}
+      {editMode || (
+        <>
+          {todo.content}
+          &nbsp;
+          <button onClick={showEdit}>수정</button>
+        </>
+      )}
+      {editMode && (
+        <>
+          <input
+            ref={editedContentInputRef}
+            type="text"
+            placeholder="할일을 입력해주세요."
+            value={editedContent}
+            onChange={(e) => setEditedContent(e.target.value)}
+          />
+          &nbsp;
+          <button onClick={commitEdit}>수정완료</button>
+          &nbsp;
+          <button onClick={cancelEdit}>수정취소</button>
+        </>
+      )}
       &nbsp;
       <button onClick={removeTodo}>삭제</button>
     </li>
-  )
+  );
 }
 
 function TodoList({ todosState }) {
   return (
     <ul>
       {todosState.todos.map((todo, index) => (
-        <TodoListItem todosState={todosState} key={todo.id} todo={todo} index={index} />
+        <TodoListItem
+          todosState={todosState}
+          key={todo.id}
+          todo={todo}
+          index={index}
+        />
       ))}
     </ul>
   );
@@ -58,7 +109,7 @@ function NewTodoForm({ todosState }) {
         name="content"
         type="text"
         placeholder="할일을 입력해주세요."
-        />
+      />
       <input type="submit" value="추가" />
       <input type="reset" value="취소" />
     </form>
@@ -94,8 +145,8 @@ function useTodosState() {
 
   const modifyTodo = (index, newContent) => {
     const newTodos = todos.map((todo, _index) =>
-                               _index != index ? todo : { ...todo, content: newContent }
-                              );
+      _index != index ? todo : { ...todo, content: newContent }
+    );
     setTodos(newTodos);
   };
 
