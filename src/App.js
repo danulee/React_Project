@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { AppBar , Toolbar ,TextField ,Button } from "@mui/material";
+import { AppBar , Toolbar , TextField , Button , Chip , Box} from "@mui/material";
 
 //기능 함수들
 function useTodosState() {
@@ -91,31 +91,40 @@ function TodoListItem({ todosState, todo, index }) {
   return (
     <li>
       <br />
-      <span className="font-bold mx-5 p-5">{todo.id}</span>
-
-      <span className="mx-5 p-5">{todo.regDate}</span>
-
+      <div className="mt-4 px-4">
+        <ul>
+            <li key={todo.id} className="mt-10">
+              <div className="flex gap-2">
+                <Chip label={`번호 : ${todo.id}`} variant="outlined" />
+                <Chip label={todo.regDate} color="primary" variant="outlined" />
+              </div>
+            </li>
+        </ul>
+      </div>
       {editMode || (
         <>
-           <span className="mx-5 p-5">{todo.content}</span>
+          <div className="mt-4 mb-4 p-10 shadow rounded-[20px]"><Box component="span" sx={{color:'primary.main'}}>{todo.content}</Box></div>
+          <span className="m-3"></span>
           <Button variant="outlined" onClick={showTodo}>수정</Button>
+          <span className="m-3"></span>
         </>
       )}
       {editMode && (
-        <>
+        <><div className="mt-4 p-10 shadow rounded-[20px]">
           <input
             type="text"
             placeholder="할일을 입력해주세요."
             value={editedContent}
             onChange={(e) => setEditedContent(e.target.value)}
-          />
-          &nbsp;
+          /></div>
+         <span className="m-3"></span>
           <Button variant="outlined" onClick={commitEdit}>수정완료</Button>
-          &nbsp;
+          <span className="m-1"></span>
           <Button variant="outlined" onClick={cancelEdit}>수정취소</Button>
+          <span className="m-3"></span>
+          
         </>
       )}
-       &nbsp;
       <Button variant="outlined" onClick={removeTodo}>삭제</Button>
     </li>
   );
