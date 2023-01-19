@@ -1,7 +1,6 @@
-console.clear();
+import React, { useState, useRef } from "react";
 
-import React, { useState, useRef } from "https://cdn.skypack.dev/react";
-import ReactDOM from "https://cdn.skypack.dev/react-dom";
+import "./App.css";
 
 function TodoListItem({ todosState, todo, index }) {
   const [editMode, setEditMode] = useState(false);
@@ -12,7 +11,7 @@ function TodoListItem({ todosState, todo, index }) {
     todosState.removeTodo(index);
   };
 
-  const showEdit = () => {
+  const showTodo = () => {
     setEditMode(true);
   };
 
@@ -43,13 +42,12 @@ function TodoListItem({ todosState, todo, index }) {
         <>
           {todo.content}
           &nbsp;
-          <button onClick={showEdit}>수정</button>
+          <button onClick={showTodo}>수정</button>
         </>
       )}
       {editMode && (
         <>
           <input
-            ref={editedContentInputRef}
             type="text"
             placeholder="할일을 입력해주세요."
             value={editedContent}
@@ -57,11 +55,9 @@ function TodoListItem({ todosState, todo, index }) {
           />
           &nbsp;
           <button onClick={commitEdit}>수정완료</button>
-          &nbsp;
           <button onClick={cancelEdit}>수정취소</button>
         </>
       )}
-      &nbsp;
       <button onClick={removeTodo}>삭제</button>
     </li>
   );
@@ -103,16 +99,18 @@ function NewTodoForm({ todosState }) {
   };
 
   return (
-    <form onSubmit={onSubmit}>
-      <input
-        autoComplete="off"
-        name="content"
-        type="text"
-        placeholder="할일을 입력해주세요."
-      />
-      <input type="submit" value="추가" />
-      <input type="reset" value="취소" />
-    </form>
+    <>
+      <form onSubmit={onSubmit}>
+        <input
+          autoComplete="off"
+          name="content"
+          type="text"
+          placeholder="할일을 입력해주세요."
+        />
+        <input type="submit" value="추가" />
+        <input type="reset" value="취소" />
+      </form>
+    </>
   );
 }
 
@@ -136,7 +134,7 @@ function useTodosState() {
     const newTodo = {
       id,
       content: newContent,
-      regDate: dateToStr(new Date())
+      regDate: dateToStr(new Date()),
     };
 
     const newTodos = [...todos, newTodo];
@@ -158,8 +156,8 @@ function useTodosState() {
   return {
     todos,
     addTodo,
+    removeTodo,
     modifyTodo,
-    removeTodo
   };
 }
 
@@ -172,8 +170,6 @@ function App() {
     </>
   );
 }
-
-ReactDOM.render(<App />, document.getElementById("root"));
 
 // 유틸리티
 
@@ -197,3 +193,5 @@ function dateToStr(d) {
     pad(d.getSeconds())
   );
 }
+
+export default App;
