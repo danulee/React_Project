@@ -1,7 +1,7 @@
-import React, { useState, useRef , useEffect } from "react";
+import React, { useState, useRef , useEffect ,useMemo} from "react";
 import ReactDOM from "react-dom";
 
-import {  colors,
+import {   colors,
   CssBaseline,
   ThemeProvider,
   createTheme,
@@ -11,10 +11,14 @@ import {  colors,
   Toolbar,
   TextField,
   Chip,
-  Box} from "@mui/material";
+  Box,
+  SwipeableDrawer,
+  List,
+  ListItem,
+  Divider,
+  ListItemButton} from "@mui/material";
 
 import classNames from "https://cdn.skypack.dev/classnames";
-
 
 function useTodosState() {
   const [todos, setTodos] = useState([]);
@@ -44,23 +48,158 @@ function useTodosState() {
     setTodos(newTodos);
   };
 
+  const removeTodoById = (id) => {
+    const index = todos.findIndex((todo) => todo.id == id);
+
+    if (index != -1) {
+      removeTodo(index);
+    }
+  };
+
   return {
     todos,
     addTodo,
     modifyTodo,
-    removeTodo
+    removeTodo,
+    removeTodoById
   };
 }
 
-function App() {
-  const todosState = useTodosState();
+function TodoListItem({ todo, index, todosState, openDrawer }) {
+  return (
+    <>
+      <li key={todo.id} className="mt-10">
+        <div className="flex gap-2">
+          <Chip
+            label={`번호 : ${todo.id}`}
+            variant="outlined"
+            className="!pt-1"
+          />
+          <Chip
+            label={todo.regDate}
+            color="primary"
+            variant="outlined"
+            className="!pt-1"
+          />
+        </div>
+        <div className="mt-4 shadow rounded-[20px] flex">
+          <Button
+            className="flex-shrink-0 !items-start !rounded-[20px_0_0_20px]"
+            color="inherit"
+          >
+            <span
+              className={classNames(
+                "text-4xl",
+                "h-[80px]",
+                "flex items-center",
+                {
+                  "text-[color:var(--mui-color-primary-main)]": index % 2 == 0
+                },
+                { "text-[#dcdcdc]": index % 2 != 0 }
+              )}
+            >
+              <i className="fa-solid fa-check"></i>
+            </span>
+          </Button>
+          <div className="flex-shrink-0 my-5 w-[2px] bg-[#dcdcdc] mr-4"></div>
+          <div className="whitespace-pre-wrap leading-relaxed hover:text-[color:var(--mui-color-primary-main)] flex-grow flex items-center my-5">
+            {todo.content}
+          </div>
+          <Button
+            onClick={() => openDrawer(todo.id)}
+            className="flex-shrink-0 !items-start !rounded-[0_20px_20px_0]"
+            color="inherit"
+          >
+            <span className="text-[#dcdcdc] text-2xl h-[80px] flex items-center">
+              <i className="fa-solid fa-ellipsis-vertical"></i>
+            </span>
+          </Button>
+        </div>
+      </li>
+    </>
+  );
+}
 
-  useEffect(() => {
-    todosState.addTodo("운동\n스트레칭\n유산소\n상체\n하체볼륨 트레이닝");
-    todosState.addTodo("명상");
-    todosState.addTodo("공부");
-  }, []);
+function useTodoOptionDrawerState() {
+  const [todoId, setTodoId] = useState(null);
+  const opened = useMemo(() => todoId !== null, [todoId]);
+  const close = () => setTodoId(null);
+  const open = (id) => setTodoId(id);
 
+  return {
+    todoId,
+    opened,
+    close,
+    open
+  };
+}
+
+function TodoOptionDrawer({ todosState, state }) {
+  const removeTodo = () => {
+    todosState.removeTodoById(state.todoId);
+    state.close();
+  };
+
+  return (
+    <>
+      <SwipeableDrawer
+        anchor={"bottom"}
+        onOpen={() => {}}
+        open={state.opened}
+        onClose={state.close}
+      >
+        <List className="!py-0">
+          <ListItem className="!pt-6 !p-5">
+            <span className="text-[color:var(--mui-color-primary-main)]">
+              {state.todoId}번
+            </span>
+            <span>&nbsp;</span>
+            <span>할일에 대해서</span>
+          </ListItem>
+          <Divider />
+          <ListItemButton className="!pt-6 !p-5 !items-baseline"
+            button
+            onClick={removeTodo}
+          >
+            <i className="fa-solid fa-trash-can"></i>
+            &nbsp;
+            <span>삭제</span>
+          </ListItemButton>
+          <ListItemButton className="!pt-6 !p-5 !items-baseline" button>
+            <i className="fa-solid fa-pen-to-square"></i>
+            &nbsp;
+            <span>수정</span>
+          </ListItemButton>
+        </List>
+      </SwipeableDrawer>
+    </>
+  );
+}
+
+function TodoList({ todosState }) {
+  const todoOptionDrawerState = useTodoOptionDrawerState();
+
+  return (
+    <>
+      <TodoOptionDrawer todosState={todosState} state={todoOptionDrawerState} />
+      <div className="mt-4 px-4">
+        <ul>
+          {todosState.todos.map((todo, index) => (
+            <TodoListItem
+              key={todo.id}
+              todo={todo}
+              index={index}
+              todosState={todosState}
+              openDrawer={todoOptionDrawerState.open}
+            />
+          ))}
+        </ul>
+      </div>
+    </>
+  );
+}
+
+function NewTodoForm({ todosState }) {
   const onSubmit = (e) => {
     e.preventDefault();
 
@@ -82,14 +221,6 @@ function App() {
 
   return (
     <>
-      <AppBar position="fixed">
-        <Toolbar>
-          <div className="flex-1"></div>
-          <span className="font-bold">HAPPY NOTE</span>
-          <div className="flex-1"></div>
-        </Toolbar>
-      </AppBar>
-      <Toolbar />
       <form onSubmit={onSubmit} className="flex flex-col mt-4 px-4 gap-2">
         <TextField
           minRows={3}
@@ -105,60 +236,31 @@ function App() {
           추가
         </Button>
       </form>
-      <div className="mt-4 px-4">
-        <ul>
-          {todosState.todos.map((todo, index) => (
-            <li key={todo.id} className="mt-10">
-              <div className="flex gap-2">
-                <Chip
-                  label={`번호 : ${todo.id}`}
-                  variant="outlined"
-                  className="!pt-1"
-                />
-                <Chip
-                  label={todo.regDate}
-                  color="primary"
-                  variant="outlined"
-                  className="!pt-1"
-                />
-              </div>
-              <div className="mt-4 shadow rounded-[20px] flex">
-                <Button
-                  className="flex-shrink-0 !items-start !rounded-[20px_0_0_20px]"
-                  color="inherit"
-                >
-                  <span
-                    className={classNames(
-                      "text-4xl",
-                      "h-[80px]",
-                      "flex items-center",
-                      {
-                        "text-[color:var(--mui-color-primary-main)]":
-                          index % 2 == 0
-                      },
-                      { "text-[#dcdcdc]": index % 2 != 0 }
-                    )}
-                  >
-                    <i className="fa-solid fa-check"></i>
-                  </span>
-                </Button>
-                <div className="flex-shrink-0 my-5 w-[2px] bg-[#dcdcdc] mr-4"></div>
-                <div className="whitespace-pre-wrap leading-relaxed hover:text-[color:var(--mui-color-primary-main)] flex-grow flex items-center my-5">
-                  {todo.content}
-                </div>
-                <Button
-                  className="flex-shrink-0 !items-start !rounded-[0_20px_20px_0]"
-                  color="inherit"
-                >
-                  <span className="text-[#dcdcdc] text-2xl h-[80px] flex items-center">
-                    <i className="fa-solid fa-ellipsis-vertical"></i>
-                  </span>
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+    </>
+  );
+}
+
+function App() {
+  const todosState = useTodosState();
+
+  useEffect(() => {
+    todosState.addTodo("운동\n스트레칭\n유산소\n상체\n하체볼륨 트레이닝");
+    todosState.addTodo("명상");
+    todosState.addTodo("공부");
+  }, []);
+
+  return (
+    <>
+      <AppBar position="fixed">
+        <Toolbar>
+          <div className="flex-1"></div>
+          <span className="font-bold">HAPPY NOTE</span>
+          <div className="flex-1"></div>
+        </Toolbar>
+      </AppBar>
+      <Toolbar />
+      <NewTodoForm todosState={todosState} />
+      <TodoList todosState={todosState} />
     </>
   );
 }
