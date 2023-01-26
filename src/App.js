@@ -16,7 +16,9 @@ import {   colors,
   List,
   ListItem,
   Divider,
-  ListItemButton} from "@mui/material";
+  ListItemButton,
+  Modal
+} from "@mui/material";
 
 import classNames from "https://cdn.skypack.dev/classnames";
 
@@ -42,6 +44,16 @@ function useTodosState() {
     );
     setTodos(newTodos);
   };
+  
+  const modifyTodoById = (id, newContent) => {
+    const index = findTodoIndexById(id);
+    
+    if ( index == -1 ) {
+      return;
+    }
+    
+    modifyTodo(index, newContent);
+  }
 
   const removeTodo = (index) => {
     const newTodos = todos.filter((_, _index) => _index != index);
@@ -49,19 +61,35 @@ function useTodosState() {
   };
 
   const removeTodoById = (id) => {
-    const index = todos.findIndex((todo) => todo.id == id);
+    const index = findTodoIndexById(id);
 
     if (index != -1) {
       removeTodo(index);
     }
   };
+  
+  const findTodoIndexById = (id) => {
+    return todos.findIndex((todo) => todo.id == id);;
+  }
+  
+  const findTodoById = (id) => {
+    const index = findTodoIndexById(id);
+
+    if (index == -1) {
+      return null;
+    }
+    
+    return todos[index];
+  }
 
   return {
     todos,
     addTodo,
     modifyTodo,
+    modifyTodoById,
     removeTodo,
-    removeTodoById
+    removeTodoById,
+    findTodoById
   };
 }
 
@@ -134,14 +162,85 @@ function useTodoOptionDrawerState() {
   };
 }
 
+function EditTodoModal({ state, todosState, todo }) {
+  const onSubmit = (e) => {
+    e.preventDefault();
+    
+    const form = e.target;
+    
+    form.content.value = form.content.value.trim();
+    
+    if ( form.content.value.length == 0 ) {
+      alert('할일을 입력해주세요.');
+      form.content.focus();
+      return;
+    }
+    
+    todosState.modifyTodoById(todo.id, form.content.value);
+    state.close();
+  }
+  
+  return (
+    <>
+      <Modal
+        open={state.opened}
+        onClose={state.close}
+        className="flex justify-center items-center"
+      >
+        <div className="bg-white rounded-[20px] p-7 w-full max-w-lg">
+          <form onSubmit={onSubmit} className="flex flex-col gap-2">
+            <TextField
+              minRows={3}
+              maxRows={10}
+              multiline
+              autoComplete="off"
+              name="content"
+              label="할일을 입력해주세요."
+              variant="outlined"
+              defaultValue={todo?.content}
+            />
+
+            <Button type="submit" variant="contained">
+              수정
+            </Button>
+          </form>
+        </div>
+      </Modal>
+    </>
+  );
+}
+
+function useEditTodoModalState() {
+  const [opened, setOpened] = useState(false);
+
+  const open = () => {
+    setOpened(true);
+  };
+
+  const close = () => {
+    setOpened(false);
+  };
+
+  return {
+    opened,
+    open,
+    close
+  };
+}
+
 function TodoOptionDrawer({ todosState, state }) {
   const removeTodo = () => {
     todosState.removeTodoById(state.todoId);
     state.close();
   };
 
+  const editTodoModalState = useEditTodoModalState();
+  
+  const todo = todosState.findTodoById(state.todoId);
+
   return (
     <>
+      <EditTodoModal state={editTodoModalState} todosState={todosState} todo={todo} />
       <SwipeableDrawer
         anchor={"bottom"}
         onOpen={() => {}}
@@ -151,24 +250,29 @@ function TodoOptionDrawer({ todosState, state }) {
         <List className="!py-0">
           <ListItem className="!pt-6 !p-5">
             <span className="text-[color:var(--mui-color-primary-main)]">
-              {state.todoId}번
+              {todo?.id}번
             </span>
             <span>&nbsp;</span>
             <span>할일에 대해서</span>
           </ListItem>
           <Divider />
-          <ListItemButton className="!pt-6 !p-5 !items-baseline"
+          <ListItemButton
+            className="!pt-6 !p-5 !items-baseline"
+            button
+            onClick={editTodoModalState.open}
+          >
+            <i className="fa-solid fa-pen-to-square"></i>
+            &nbsp;
+            <span>수정</span>
+          </ListItemButton>
+          <ListItemButton
+            className="!pt-6 !p-5 !items-baseline"
             button
             onClick={removeTodo}
           >
             <i className="fa-solid fa-trash-can"></i>
             &nbsp;
             <span>삭제</span>
-          </ListItemButton>
-          <ListItemButton className="!pt-6 !p-5 !items-baseline" button>
-            <i className="fa-solid fa-pen-to-square"></i>
-            &nbsp;
-            <span>수정</span>
           </ListItemButton>
         </List>
       </SwipeableDrawer>
