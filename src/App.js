@@ -1,7 +1,21 @@
-import React, { useState, useRef } from "react";
-import { AppBar , Toolbar , TextField , Button , Chip , Box} from "@mui/material";
+import React, { useState, useRef , useEffect } from "react";
+import ReactDOM from "react-dom";
 
-//기능 함수들
+import {  colors,
+  CssBaseline,
+  ThemeProvider,
+  createTheme,
+  Link,
+  Button,
+  AppBar,
+  Toolbar,
+  TextField,
+  Chip,
+  Box} from "@mui/material";
+
+import classNames from "https://cdn.skypack.dev/classnames";
+
+
 function useTodosState() {
   const [todos, setTodos] = useState([]);
   const lastTodoIdRef = useRef(0);
@@ -12,11 +26,10 @@ function useTodosState() {
     const newTodo = {
       id,
       content: newContent,
-      regDate: dateToStr(new Date()),
+      regDate: dateToStr(new Date())
     };
 
-    const newTodos = [...todos, newTodo];
-    setTodos(newTodos);
+    setTodos((todos) => [newTodo, ...todos]);
   };
 
   const modifyTodo = (index, newContent) => {
@@ -34,106 +47,20 @@ function useTodosState() {
   return {
     todos,
     addTodo,
-    removeTodo,
     modifyTodo,
+    removeTodo
   };
 }
 
-
-//할일 리스트
-function TodoList({ todosState }) {
-  return (
-    <ul>
-      {todosState.todos.map((todo, index) => (
-        <TodoListItem
-          todosState={todosState}
-          key={todo.id}
-          todo={todo}
-          index={index}
-        />
-      ))}
-    </ul>
-  );
-}
-
-
-//할일 리스트 보여주기
-function TodoListItem({ todosState, todo, index }) {
-  const [editMode, setEditMode] = useState(false);
-  const [editedContent, setEditedContent] = useState(todo.content);
-  const editedContentInputRef = useRef(null);
-
-  const removeTodo = () => {
-    todosState.removeTodo(index);
-  };
-
-  const showTodo = () => {
-    setEditMode(true);
-  };
-
-  const commitEdit = () => {
-    if (editedContent.trim().length == 0) {
-      alert("할일을 입력해주세요.");
-      editedContentInputRef.current.focus();
-      return;
-    }
-
-    todosState.modifyTodo(index, editedContent.trim());
-
-    setEditMode(false);
-  };
-
-  const cancelEdit = () => {
-    setEditMode(false);
-    setEditedContent(todo.content);
-  };
-
-  return (
-    <li>
-      <br />
-      <div className="mt-4 px-4">
-        <ul>
-            <li key={todo.id} className="mt-10">
-              <div className="flex gap-2">
-                <Chip label={`번호 : ${todo.id}`} variant="outlined" />
-                <Chip label={todo.regDate} color="primary" variant="outlined" />
-              </div>
-            </li>
-        </ul>
-      </div>
-      {editMode || (
-        <>
-          <div className="mt-4 mb-4 p-10 shadow rounded-[20px]"><Box component="span" sx={{color:'primary.main'}}>{todo.content}</Box></div>
-          <span className="m-3"></span>
-          <Button variant="outlined" onClick={showTodo}>수정</Button>
-          <span className="m-3"></span>
-        </>
-      )}
-      {editMode && (
-        <><div className="mt-4 p-10 shadow rounded-[20px]">
-          <input
-            type="text"
-            placeholder="할일을 입력해주세요."
-            value={editedContent}
-            onChange={(e) => setEditedContent(e.target.value)}
-          /></div>
-         <span className="m-3"></span>
-          <Button variant="outlined" onClick={commitEdit}>수정완료</Button>
-          <span className="m-1"></span>
-          <Button variant="outlined" onClick={cancelEdit}>수정취소</Button>
-          <span className="m-3"></span>
-          
-        </>
-      )}
-      <Button variant="outlined" onClick={removeTodo}>삭제</Button>
-    </li>
-  );
-}
-
-
-//메인 (&할일 적어서 받기)
 function App() {
   const todosState = useTodosState();
+
+  useEffect(() => {
+    todosState.addTodo("운동\n스트레칭\n유산소\n상체\n하체볼륨 트레이닝");
+    todosState.addTodo("명상");
+    todosState.addTodo("공부");
+  }, []);
+
   const onSubmit = (e) => {
     e.preventDefault();
 
@@ -165,20 +92,131 @@ function App() {
       <Toolbar />
       <form onSubmit={onSubmit} className="flex flex-col mt-4 px-4 gap-2">
         <TextField
+          minRows={3}
+          maxRows={10}
+          multiline
           autoComplete="off"
           name="content"
           label="할일을 입력해주세요."
           variant="outlined"
         />
-        <Button type="submit" variant="contained">추가</Button>
+
+        <Button type="submit" variant="contained">
+          추가
+        </Button>
       </form>
-      <TodoList todosState={todosState} />
+      <div className="mt-4 px-4">
+        <ul>
+          {todosState.todos.map((todo, index) => (
+            <li key={todo.id} className="mt-10">
+              <div className="flex gap-2">
+                <Chip
+                  label={`번호 : ${todo.id}`}
+                  variant="outlined"
+                  className="!pt-1"
+                />
+                <Chip
+                  label={todo.regDate}
+                  color="primary"
+                  variant="outlined"
+                  className="!pt-1"
+                />
+              </div>
+              <div className="mt-4 shadow rounded-[20px] flex">
+                <Button
+                  className="flex-shrink-0 !items-start !rounded-[20px_0_0_20px]"
+                  color="inherit"
+                >
+                  <span
+                    className={classNames(
+                      "text-4xl",
+                      "h-[80px]",
+                      "flex items-center",
+                      {
+                        "text-[color:var(--mui-color-primary-main)]":
+                          index % 2 == 0
+                      },
+                      { "text-[#dcdcdc]": index % 2 != 0 }
+                    )}
+                  >
+                    <i className="fa-solid fa-check"></i>
+                  </span>
+                </Button>
+                <div className="flex-shrink-0 my-5 w-[2px] bg-[#dcdcdc] mr-4"></div>
+                <div className="whitespace-pre-wrap leading-relaxed hover:text-[color:var(--mui-color-primary-main)] flex-grow flex items-center my-5">
+                  {todo.content}
+                </div>
+                <Button
+                  className="flex-shrink-0 !items-start !rounded-[0_20px_20px_0]"
+                  color="inherit"
+                >
+                  <span className="text-[#dcdcdc] text-2xl h-[80px] flex items-center">
+                    <i className="fa-solid fa-ellipsis-vertical"></i>
+                  </span>
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     </>
   );
 }
 
+const muiThemePaletteKeys = [
+  "background",
+  "common",
+  "error",
+  "grey",
+  "info",
+  "primary",
+  "secondary",
+  "success",
+  "text",
+  "warning"
+];
 
-//유틸
+function Root() {
+  // Create a theme instance.
+  const theme = createTheme({
+    typography: {
+      fontFamily: ["GmarketSansMedium"]
+    },
+    palette: {
+      primary: {
+        main: "#A26FCF",
+        contrastText: "#ffffff"
+      }
+    }
+  });
+
+  useEffect(() => {
+    const r = document.querySelector(":root");
+
+    muiThemePaletteKeys.forEach((paletteKey) => {
+      const themeColorObj = theme.palette[paletteKey];
+
+      for (const key in themeColorObj) {
+        if (Object.hasOwnProperty.call(themeColorObj, key)) {
+          const colorVal = themeColorObj[key];
+          r.style.setProperty(`--mui-color-${paletteKey}-${key}`, colorVal);
+        }
+      }
+    });
+  }, []);
+
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <App />
+    </ThemeProvider>
+  );
+}
+
+ReactDOM.render(<Root />, document.getElementById("root"));
+
+// 유틸리티
+
 // 날짜 객체 입력받아서 문장(yyyy-mm-dd hh:mm:ss)으로 반환한다.
 function dateToStr(d) {
   const pad = (n) => {
@@ -199,5 +237,6 @@ function dateToStr(d) {
     pad(d.getSeconds())
   );
 }
+
 
 export default App;
