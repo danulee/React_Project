@@ -162,7 +162,12 @@ function useTodoOptionDrawerState() {
   };
 }
 
-function EditTodoModal({ state, todosState, todo }) {
+function EditTodoModal({ state, todosState, todo, closeDrawer }) {
+  const close = () => {
+    state.close();
+    closeDrawer();
+  }
+  
   const onSubmit = (e) => {
     e.preventDefault();
     
@@ -177,14 +182,14 @@ function EditTodoModal({ state, todosState, todo }) {
     }
     
     todosState.modifyTodoById(todo.id, form.content.value);
-    state.close();
+    close();
   }
   
   return (
     <>
       <Modal
         open={state.opened}
-        onClose={state.close}
+        onClose={close}
         className="flex justify-center items-center"
       >
         <div className="bg-white rounded-[20px] p-7 w-full max-w-lg">
@@ -230,6 +235,11 @@ function useEditTodoModalState() {
 
 function TodoOptionDrawer({ todosState, state }) {
   const removeTodo = () => {
+    if ( window.confirm(`${state.todoId}번 할일을 삭제하시겠습니까?`) == false ) {
+      state.close();
+      return;
+    }
+    //react에서 confirm 지원 X > window 이용
     todosState.removeTodoById(state.todoId);
     state.close();
   };
@@ -240,7 +250,7 @@ function TodoOptionDrawer({ todosState, state }) {
 
   return (
     <>
-      <EditTodoModal state={editTodoModalState} todosState={todosState} todo={todo} />
+      <EditTodoModal state={editTodoModalState} todosState={todosState} todo={todo} closeDrawer={state.close} />
       <SwipeableDrawer
         anchor={"bottom"}
         onOpen={() => {}}
@@ -256,7 +266,7 @@ function TodoOptionDrawer({ todosState, state }) {
             <span>할일에 대해서</span>
           </ListItem>
           <Divider />
-          <ListItemButton
+          <ListItem
             className="!pt-6 !p-5 !items-baseline"
             button
             onClick={editTodoModalState.open}
@@ -264,8 +274,8 @@ function TodoOptionDrawer({ todosState, state }) {
             <i className="fa-solid fa-pen-to-square"></i>
             &nbsp;
             <span>수정</span>
-          </ListItemButton>
-          <ListItemButton
+          </ListItem>
+          <ListItem
             className="!pt-6 !p-5 !items-baseline"
             button
             onClick={removeTodo}
@@ -273,7 +283,7 @@ function TodoOptionDrawer({ todosState, state }) {
             <i className="fa-solid fa-trash-can"></i>
             &nbsp;
             <span>삭제</span>
-          </ListItemButton>
+          </ListItem>
         </List>
       </SwipeableDrawer>
     </>
@@ -443,6 +453,5 @@ function dateToStr(d) {
     pad(d.getSeconds())
   );
 }
-
 
 export default App;
