@@ -33,21 +33,49 @@ import {
   useRecoilValue
 } from "recoil";
 
-import RecoilEx from "./RecoilEx";
+// import RecoilEx from "./RecoilEx";
+
+import { recoilPersist } from "recoil-persist";
 
 
 const Alert = React.forwardRef((props, ref) => {
   return <MuiAlert {...props} ref={ref} variant="filled" />;
 });
 
+const { persistAtom:persistAtomTodos } = recoilPersist({
+  key:"persistAtomTodos"
+});
+
+const { persistAtom:persistAtomLastTodoId } = recoilPersist({
+  key:"persistAtomLastTodoId"
+});
+
 const todosAtom = atom({
   key: "app/todosAtom",
-  default: []
+  default: [
+    {
+      id:3,
+      regDate:"2022-04-27 12:12:12",
+      content:"명상",
+    },
+    {
+      id:2,
+      regDate:"2022-04-27 12:12:12",
+      content:"공부",
+    },
+    {
+      id:1,
+      regDate:"2022-04-27 12:12:12",
+      content:"운동",
+    }
+  ],
+  effects_UNSTABLE: [persistAtomTodos],
 });
 
 const lastTodoIdAtom = atom({
   key: "app/lastTodoIdAtom",
-  default: 0
+  default: 3,
+  effects_UNSTABLE: [persistAtomLastTodoId],
 });
 
 function useTodosStatus() {
@@ -321,19 +349,21 @@ function TodoOptionDrawer({ status, noticeSnackbarStatus }) {
           <Divider />
           <ListItem
             className="!pt-6 !p-5 !items-baseline"
-            onClick={editTodoModalStatus.open}
-          >
-            <i className="fa-solid fa-pen-to-square"></i>
-            &nbsp;
-            <span>수정</span>
-          </ListItem>
-          <ListItem
-            className="!pt-6 !p-5 !items-baseline"
+            button
             onClick={removeTodo}
           >
             <i className="fa-solid fa-trash-can"></i>
             &nbsp;
             <span>삭제</span>
+          </ListItem>
+          <ListItem
+            className="!pt-6 !p-5 !items-baseline"
+            button
+            onClick={editTodoModalStatus.open}
+          >
+            <i className="fa-solid fa-pen-to-square"></i>
+            &nbsp;
+            <span>수정</span>
           </ListItem>
         </List>
       </SwipeableDrawer>
@@ -456,15 +486,9 @@ function App() {
   const todosStatus = useTodosStatus();
   const noticeSnackbarStatus = useNoticeSnackbarStatus();
 
-  useEffect(() => {
-    todosStatus.addTodo("운동\n스트레칭\n유산소\n상체\n하체볼륨 트레이닝");
-    todosStatus.addTodo("명상");
-    todosStatus.addTodo("공부");
-  }, []);
-
   return (
     <>
-      {/* <AppBar position="fixed">
+      <AppBar position="fixed">
         <Toolbar>
           <div className="flex-1"></div>
           <span className="font-bold">HAPPY NOTE</span>
@@ -478,8 +502,7 @@ function App() {
       />
       <TodoList
         noticeSnackbarStatus={noticeSnackbarStatus}
-      /> */}
-      <RecoilEx />
+      />
     </>
   );
 }
