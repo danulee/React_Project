@@ -33,7 +33,7 @@ import {
   useRecoilValue
 } from "recoil";
 
-
+import RecoilEx from "./RecoilEx";
 
 
 const Alert = React.forwardRef((props, ref) => {
@@ -464,7 +464,7 @@ function App() {
 
   return (
     <>
-      <AppBar position="fixed">
+      {/* <AppBar position="fixed">
         <Toolbar>
           <div className="flex-1"></div>
           <span className="font-bold">HAPPY NOTE</span>
@@ -478,7 +478,8 @@ function App() {
       />
       <TodoList
         noticeSnackbarStatus={noticeSnackbarStatus}
-      />
+      /> */}
+      <RecoilEx />
     </>
   );
 }
