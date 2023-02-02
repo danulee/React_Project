@@ -1,53 +1,37 @@
-import React, { useState, useRef , useEffect ,useMemo} from "react";
-import ReactDOM from "react-dom";
-
-import classNames from "https://cdn.skypack.dev/classnames";
-
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useInsertionEffect,
+} from "react";
 import {
-  colors,
-  CssBaseline,
-  ThemeProvider,
-  createTheme,
-  Link,
-  Button,
   AppBar,
   Toolbar,
+  Button,
   TextField,
   Chip,
-  Box,
   SwipeableDrawer,
   List,
   ListItem,
-  Divider,
+  ListItemButton,
   Modal,
   Snackbar,
-  Alert as MuiAlert
-} from"@mui/material";
- 
-import {
-  RecoilRoot,
-  atom,
-  atomFamily,
-  useRecoilState,
-  useSetRecoilState,
-  useRecoilValue
-} from "recoil";
+  Alert as MuiAlert,
+} from "@mui/material";
 
-// import RecoilEx from "./RecoilEx";
+import classNames from "classnames";
+
+import RecoilEx from "./RecoilEx";
+
+import { atom, useRecoilState } from "recoil";
 
 import { recoilPersist } from "recoil-persist";
-
-
-const Alert = React.forwardRef((props, ref) => {
-  return <MuiAlert {...props} ref={ref} variant="filled" />;
-});
-
 const { persistAtom: persistAtomTodos } = recoilPersist({
-  key: "persistAtomTodos"
+  key: "persistAtomTodos",
 });
-
 const { persistAtom: persistAtomLastTodoId } = recoilPersist({
-  key: "persistAtomLastTodoId"
+  key: "persistAtomLastTodoId",
 });
 
 const todosAtom = atom({
@@ -55,27 +39,31 @@ const todosAtom = atom({
   default: [
     {
       id: 3,
-      regDate: "2022-04-27 12:12:12",
-      content: "명상"
+      regDate: "2023-02-02 12:12:12",
+      content: "공부",
     },
     {
       id: 2,
-      regDate: "2022-04-27 12:12:12",
-      content: "공부"
+      regDate: "2023-02-02 12:12:12",
+      content: "요리",
     },
     {
       id: 1,
-      regDate: "2022-04-27 12:12:12",
-      content: "운동"
-    }
+      regDate: "2023-02-02 12:12:12",
+      content: "운동",
+    },
   ],
-  effects_UNSTABLE: [persistAtomTodos]
+  effects_UNSTABLE: [persistAtomTodos],
 });
 
 const lastTodoIdAtom = atom({
   key: "app/lastTodoIdAtom",
   default: 3,
-  effects_UNSTABLE: [persistAtomLastTodoId]
+  effects_UNSTABLE: [persistAtomLastTodoId],
+});
+
+const Alert = React.forwardRef((props, ref) => {
+  return <MuiAlert {...props} ref={ref} variant="filled" />;
 });
 
 function useTodosStatus() {
@@ -92,7 +80,7 @@ function useTodosStatus() {
     const newTodo = {
       id,
       content: newContent,
-      regDate: dateToStr(new Date())
+      regDate: dateToStr(new Date()),
     };
 
     setTodos((todos) => [newTodo, ...todos]);
@@ -125,9 +113,7 @@ function useTodosStatus() {
   const removeTodoById = (id) => {
     const index = findTodoIndexById(id);
 
-    if (index != -1) {
-      removeTodo(index);
-    }
+    return removeTodo(index);
   };
 
   const findTodoIndexById = (id) => {
@@ -147,12 +133,56 @@ function useTodosStatus() {
   return {
     todos,
     addTodo,
-    modifyTodo,
-    modifyTodoById,
     removeTodo,
+    modifyTodo,
     removeTodoById,
-    findTodoById
+    findTodoById,
+    modifyTodoById,
   };
+}
+
+function NewTodoForm() {
+  const noticeSnackbarStatus = useNoticeSnackbarStatus();
+  const todosStatus = useTodosStatus();
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+
+    const form = e.target;
+
+    form.content.value = form.content.value.trim();
+
+    if (form.content.value.length == 0) {
+      alert("할일을 입력해주세요.");
+      form.content.focus();
+
+      return;
+    }
+
+    const newTodoId = todosStatus.addTodo(form.content.value);
+    form.content.value = "";
+    form.content.focus();
+    noticeSnackbarStatus.open(`${newTodoId}번 할 일이 추가되었습니다.`);
+  };
+
+  return (
+    <>
+      <form onSubmit={onSubmit} className="flex flex-col mt-4 px-4 gap-2">
+        <TextField
+          minRows={3}
+          maxRows={10}
+          multiline
+          autoComplete="off"
+          name="content"
+          label="할일을 입력해주세요."
+          variant="outlined"
+        />
+        <Button type="submit" variant="contained">
+          추가
+        </Button>
+      </form>
+    </>
+  );
 }
 
 function TodoListItem({ todo, index, openDrawer }) {
@@ -167,41 +197,43 @@ function TodoListItem({ todo, index, openDrawer }) {
           />
           <Chip
             label={todo.regDate}
-            color="primary"
             variant="outlined"
+            color="primary"
             className="!pt-1"
           />
         </div>
-        <div className="mt-4 shadow rounded-[20px] flex">
+        <div className="flex shadow mt-4 rounded-[20px]">
           <Button
-            className="flex-shrink-0 !items-start !rounded-[20px_0_0_20px]"
+            className="w-[130px] flex-shrink-0 !items-start !rounded-[20px_0_0_20px]"
             color="inherit"
           >
             <span
               className={classNames(
-                "text-4xl",
-                "h-[80px]",
+                "text-3xl",
                 "flex items-center",
+                "h-[50px]",
                 {
-                  "text-[color:var(--mui-color-primary-main)]": index % 2 == 0
+                  "text-[color:var(--mui-color-primary-main)]": index % 2 == 0,
                 },
-                { "text-[#dcdcdc]": index % 2 != 0 }
+                {
+                  "text-[#b0b0b0]": index % 2 != 0,
+                }
               )}
             >
               <i className="fa-solid fa-check"></i>
             </span>
           </Button>
-          <div className="flex-shrink-0 my-5 w-[2px] bg-[#dcdcdc] mr-4"></div>
-          <div className="whitespace-pre-wrap leading-relaxed hover:text-[color:var(--mui-color-primary-main)] flex-grow flex items-center my-5">
+          <div className="flex-shrink-0 w-[2px] bg-[#b0b0b0] my-5 mr-6"></div>
+          <div className="whitespace-pre-wrap leading-relaxed hover:text-[color:var(--mui-color-primary-main)] flex-grow my-5 flex items-center">
             {todo.content}
           </div>
           <Button
             onClick={() => openDrawer(todo.id)}
-            className="flex-shrink-0 !items-start !rounded-[0_20px_20px_0]"
+            className="w-[130px] flex-shrink-0 !items-start !rounded-[0_20px_20px_0]"
             color="inherit"
           >
-            <span className="text-[#dcdcdc] text-2xl h-[80px] flex items-center">
-              <i className="fa-solid fa-ellipsis-vertical"></i>
+            <span className="text-xl text-[#b0b0b0] flex items-center h-[50px]">
+              <i className="fa-solid fa-ellipsis"></i>
             </span>
           </Button>
         </div>
@@ -220,11 +252,12 @@ function useTodoOptionDrawerStatus() {
     todoId,
     opened,
     close,
-    open
+    open,
   };
 }
 
-function EditTodoModal({ status, todo, closeDrawer, noticeSnackbarStatus }) {
+function EditTodoModal({ status, todo, closeDrawer }) {
+  const noticeSnackbarStatus = useNoticeSnackbarStatus();
   const todosStatus = useTodosStatus();
 
   const close = () => {
@@ -240,14 +273,14 @@ function EditTodoModal({ status, todo, closeDrawer, noticeSnackbarStatus }) {
     form.content.value = form.content.value.trim();
 
     if (form.content.value.length == 0) {
-      alert("할일을 입력해주세요.");
+      alert("할 일을 입력해주세요.");
       form.content.focus();
       return;
     }
 
     todosStatus.modifyTodoById(todo.id, form.content.value);
     close();
-    noticeSnackbarStatus.open(`${todo.id}번 할일이 수정되었습니다.`, "info");
+    noticeSnackbarStatus.open(`${todo.id}번 할 일이 수정되었습니다.`, "info");
   };
 
   return (
@@ -257,8 +290,8 @@ function EditTodoModal({ status, todo, closeDrawer, noticeSnackbarStatus }) {
         onClose={close}
         className="flex justify-center items-center"
       >
-        <div className="bg-white rounded-[20px] p-7 w-full max-w-lg">
-          <form onSubmit={onSubmit} className="flex flex-col gap-2">
+        <div className="bg-white p-10 rounded-[20px]">
+          <form onSubmit={onSubmit} className="flex flex-col mt-4 px-4 gap-2">
             <TextField
               minRows={3}
               maxRows={10}
@@ -269,7 +302,6 @@ function EditTodoModal({ status, todo, closeDrawer, noticeSnackbarStatus }) {
               variant="outlined"
               defaultValue={todo?.content}
             />
-
             <Button type="submit" variant="contained">
               수정
             </Button>
@@ -294,29 +326,25 @@ function useEditTodoModalStatus() {
   return {
     opened,
     open,
-    close
+    close,
   };
 }
 
-function TodoOptionDrawer({ status, noticeSnackbarStatus }) {
+function TodoOptionDrawer({ status }) {
+  const noticeSnackbarStatus = useNoticeSnackbarStatus();
   const todosStatus = useTodosStatus();
 
+  const editTodoModalStatus = useEditTodoModalStatus();
   const removeTodo = () => {
-    if (window.confirm(`${status.todoId}번 할일을 삭제하시겠습니까?`) == false) {
+    if (window.confirm(`${status.todoId}번 할 일을 삭제하겠습니까?`) == false) {
       status.close();
       return;
     }
 
     todosStatus.removeTodoById(status.todoId);
     status.close();
-    noticeSnackbarStatus.open(
-      `${status.todoId}번 할일이 삭제되었습니다.`,
-      "info"
-    );
+    noticeSnackbarStatus.open(`${todo.id}번 할 일이 삭제되었습니다.`, "info");
   };
-
-  const editTodoModalStatus = useEditTodoModalStatus();
-
   const todo = todosStatus.findTodoById(status.todoId);
 
   return (
@@ -325,7 +353,6 @@ function TodoOptionDrawer({ status, noticeSnackbarStatus }) {
         status={editTodoModalStatus}
         todo={todo}
         closeDrawer={status.close}
-        noticeSnackbarStatus={noticeSnackbarStatus}
       />
       <SwipeableDrawer
         anchor={"bottom"}
@@ -334,48 +361,39 @@ function TodoOptionDrawer({ status, noticeSnackbarStatus }) {
         onClose={status.close}
       >
         <List className="!py-0">
-          <ListItem className="!pt-6 !p-5">
-            <span className="text-[color:var(--mui-color-primary-main)]">
-              {todo?.id}번
-            </span>
-            <span>&nbsp;</span>
-            <span>할일에 대해서</span>
+          <ListItem className="!pt-5 !p-5">
+            <span className="text-red-500 !pr-2">{status.todoId}번</span> 옵션
+            드로어
           </ListItem>
-          <Divider />
-          <ListItem
-            className="!pt-6 !p-5 !items-baseline"
-            button
+          <ListItemButton
+            className="!pt-5 !p-5 !items-baseline"
             onClick={editTodoModalStatus.open}
           >
             <i className="fa-solid fa-pen-to-square"></i>
             &nbsp;
             <span>수정</span>
-          </ListItem>
-          <ListItem
-            className="!pt-6 !p-5 !items-baseline"
-            button
+          </ListItemButton>
+          <ListItemButton
+            className="!pt-5 !p-5 !items-baseline"
             onClick={removeTodo}
           >
-            <i className="fa-solid fa-trash-can"></i>
+            <i className="fa-solid fa-trash"></i>
             &nbsp;
             <span>삭제</span>
-          </ListItem>
+          </ListItemButton>
         </List>
       </SwipeableDrawer>
     </>
   );
 }
 
-function TodoList({ noticeSnackbarStatus }) {
+function TodoList() {
   const todosStatus = useTodosStatus();
   const todoOptionDrawerStatus = useTodoOptionDrawerStatus();
 
   return (
     <>
-      <TodoOptionDrawer
-        status={todoOptionDrawerStatus}
-        noticeSnackbarStatus={noticeSnackbarStatus}
-      />
+      <TodoOptionDrawer status={todoOptionDrawerStatus} />
       <div className="mt-4 px-4">
         <ul>
           {todosStatus.todos.map((todo, index) => (
@@ -392,72 +410,14 @@ function TodoList({ noticeSnackbarStatus }) {
   );
 }
 
-function NewTodoForm({ noticeSnackbarStatus }) {
-  const todosStatus = useTodosStatus();
-
-  const onSubmit = (e) => {
-    e.preventDefault();
-
-    const form = e.target;
-
-    form.content.value = form.content.value.trim();
-
-    if (form.content.value.length == 0) {
-      alert("할일을 입력해주세요.");
-      form.content.focus();
-
-      return;
-    }
-
-    const newTodoId = todosStatus.addTodo(form.content.value);
-    form.content.value = "";
-    form.content.focus();
-    noticeSnackbarStatus.open(`${newTodoId}번 할일이 추가되었습니다.`);
-  };
-
-  return (
-    <>
-      <form onSubmit={onSubmit} className="flex flex-col mt-4 px-4 gap-2">
-        <TextField
-          minRows={3}
-          maxRows={10}
-          multiline
-          autoComplete="off"
-          name="content"
-          label="할일을 입력해주세요."
-          variant="outlined"
-        />
-
-        <Button type="submit" variant="contained">
-          추가
-        </Button>
-      </form>
-    </>
-  );
-}
-
-function NoticeSnackbar({ status }) {
-  return (
-    <>
-      <Snackbar
-        open={status.opened}
-        autoHideDuration={status.autoHideDuration}
-        onClose={status.close}
-      >
-        <Alert severity={status.severity}>{status.msg}</Alert>
-      </Snackbar>
-    </>
-  );
-}
-
 const noticeSnackbarInfoAtom = atom({
   key: "app/noticeSnackbarInfoAtom",
   default: {
     opened: false,
     autoHideDuration: 0,
     severity: "",
-    msg: ""
-  }
+    msg: "",
+  },
 });
 
 function useNoticeSnackbarStatus() {
@@ -473,103 +433,62 @@ function useNoticeSnackbarStatus() {
   const open = (msg, severity = "success", autoHideDuration = 6000) => {
     setNoticeSnackbarInfo({
       opened: true,
-      msg,
+      autoHideDuration,
       severity,
-      autoHideDuration
+      msg,
     });
   };
 
   const close = () => {
     setNoticeSnackbarInfo({
       ...noticeSnackbarInfo,
-      opened: false
+      opened: false,
     });
   };
 
   return {
     opened,
-    open,
-    close,
     autoHideDuration,
     severity,
-    msg
+    msg,
+    open,
+    close,
   };
 }
 
-function App() {
-  const todosStatus = useTodosStatus();
-  const noticeSnackbarStatus = useNoticeSnackbarStatus();
+function NoticeSnackbar() {
+  const status = useNoticeSnackbarStatus();
 
   return (
     <>
-      <AppBar position="fixed">
-        <Toolbar>
+      <Snackbar
+        open={status.opened}
+        autoHideDuration={status.autoHideDuration}
+        onClose={status.close}
+      >
+        <Alert severity={status.severity}>{status.msg}</Alert>
+      </Snackbar>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <>
+      <AppBar position="static">
+        <Toolbar className="justify-center">
           <div className="flex-1"></div>
           <span className="font-bold">HAPPY NOTE</span>
           <div className="flex-1"></div>
         </Toolbar>
       </AppBar>
-      <Toolbar />
-      <NoticeSnackbar status={noticeSnackbarStatus} />
-      <NewTodoForm noticeSnackbarStatus={noticeSnackbarStatus} />
-      <TodoList noticeSnackbarStatus={noticeSnackbarStatus} />
+      <NoticeSnackbar />
+      <NewTodoForm />
+      <TodoList />
+      {/* <RecoilEx /> */}
     </>
   );
 }
-
-const muiThemePaletteKeys = [
-  "background",
-  "common",
-  "error",
-  "grey",
-  "info",
-  "primary",
-  "secondary",
-  "success",
-  "text",
-  "warning"
-];
-
-function Root() {
-  // Create a theme instance.
-  const theme = createTheme({
-    typography: {
-      fontFamily: ["GmarketSansMedium"]
-    },
-    palette: {
-      primary: {
-        main: "#A26FCF",
-        contrastText: "#ffffff"
-      }
-    }
-  });
-
-  useEffect(() => {
-    const r = document.querySelector(":root");
-
-    muiThemePaletteKeys.forEach((paletteKey) => {
-      const themeColorObj = theme.palette[paletteKey];
-
-      for (const key in themeColorObj) {
-        if (Object.hasOwnProperty.call(themeColorObj, key)) {
-          const colorVal = themeColorObj[key];
-          r.style.setProperty(`--mui-color-${paletteKey}-${key}`, colorVal);
-        }
-      }
-    });
-  }, []);
-
-  return (
-    <RecoilRoot>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <App />
-      </ThemeProvider>
-    </RecoilRoot>
-  );
-}
-
-ReactDOM.render(<Root />, document.getElementById("root"));
 
 // 유틸리티
 
