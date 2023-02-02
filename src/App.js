@@ -23,21 +23,43 @@ import {
   Snackbar,
   Alert as MuiAlert
 } from"@mui/material";
+ 
+import {
+  RecoilRoot,
+  atom,
+  atomFamily,
+  useRecoilState,
+  useSetRecoilState,
+  useRecoilValue
+} from "recoil";
 
-import RecoilEx from "./RecoilEx";
+
+
 
 const Alert = React.forwardRef((props, ref) => {
-  return (
-    <MuiAlert {...props} ref={ref} variant="filled" />
-  )
+  return <MuiAlert {...props} ref={ref} variant="filled" />;
 });
 
-function useTodosState() {
-  const [todos, setTodos] = useState([]);
-  const lastTodoIdRef = useRef(0);
+const todosAtom = atom({
+  key: "app/todosAtom",
+  default: []
+});
+
+const lastTodoIdAtom = atom({
+  key: "app/lastTodoIdAtom",
+  default: 0
+});
+
+function useTodosStatus() {
+  const [todos, setTodos] = useRecoilState(todosAtom);
+  const [lastTodoId, setLastTodoId] = useRecoilState(lastTodoIdAtom);
+  const lastTodoIdRef = useRef(lastTodoId);
+  
+  lastTodoIdRef.current = lastTodoId;
 
   const addTodo = (newContent) => {
     const id = ++lastTodoIdRef.current;
+    setLastTodoId(id);
 
     const newTodo = {
       id,
@@ -46,7 +68,7 @@ function useTodosState() {
     };
 
     setTodos((todos) => [newTodo, ...todos]);
-    
+
     return id;
   };
 
@@ -56,16 +78,16 @@ function useTodosState() {
     );
     setTodos(newTodos);
   };
-  
+
   const modifyTodoById = (id, newContent) => {
     const index = findTodoIndexById(id);
-    
-    if ( index == -1 ) {
+
+    if (index == -1) {
       return;
     }
-    
+
     modifyTodo(index, newContent);
-  }
+  };
 
   const removeTodo = (index) => {
     const newTodos = todos.filter((_, _index) => _index != index);
@@ -79,20 +101,20 @@ function useTodosState() {
       removeTodo(index);
     }
   };
-  
+
   const findTodoIndexById = (id) => {
-    return todos.findIndex((todo) => todo.id == id);;
-  }
-  
+    return todos.findIndex((todo) => todo.id == id);
+  };
+
   const findTodoById = (id) => {
     const index = findTodoIndexById(id);
 
     if (index == -1) {
       return null;
     }
-    
+
     return todos[index];
-  }
+  };
 
   return {
     todos,
@@ -105,7 +127,7 @@ function useTodosState() {
   };
 }
 
-function TodoListItem({ todo, index, todosState, openDrawer }) {
+function TodoListItem({ todo, index, openDrawer }) {
   return (
     <>
       <li key={todo.id} className="mt-10">
@@ -160,7 +182,7 @@ function TodoListItem({ todo, index, todosState, openDrawer }) {
   );
 }
 
-function useTodoOptionDrawerState() {
+function useTodoOptionDrawerStatus() {
   const [todoId, setTodoId] = useState(null);
   const opened = useMemo(() => todoId !== null, [todoId]);
   const close = () => setTodoId(null);
@@ -174,34 +196,41 @@ function useTodoOptionDrawerState() {
   };
 }
 
-function EditTodoModal({ state, todosState, todo, closeDrawer, noticeSnackbarState }) {
-  const close = () => {
-    state.close();
-    closeDrawer();
-  }
+function EditTodoModal({
+  status,
+  todo,
+  closeDrawer,
+  noticeSnackbarStatus
+}) {
+  const todosStatus = useTodosStatus();
   
+  const close = () => {
+    status.close();
+    closeDrawer();
+  };
+
   const onSubmit = (e) => {
     e.preventDefault();
-    
+
     const form = e.target;
-    
+
     form.content.value = form.content.value.trim();
-    
-    if ( form.content.value.length == 0 ) {
-      alert('할일을 입력해주세요.');
+
+    if (form.content.value.length == 0) {
+      alert("할일을 입력해주세요.");
       form.content.focus();
       return;
     }
-    
-    todosState.modifyTodoById(todo.id, form.content.value);
+
+    todosStatus.modifyTodoById(todo.id, form.content.value);
     close();
-    noticeSnackbarState.open(`${todo.id}번 할일이 수정되었습니다.`, "info");
-  }
-  
+    noticeSnackbarStatus.open(`${todo.id}번 할일이 수정되었습니다.`, "info");
+  };
+
   return (
     <>
       <Modal
-        open={state.opened}
+        open={status.opened}
         onClose={close}
         className="flex justify-center items-center"
       >
@@ -228,7 +257,7 @@ function EditTodoModal({ state, todosState, todo, closeDrawer, noticeSnackbarSta
   );
 }
 
-function useEditTodoModalState() {
+function useEditTodoModalStatus() {
   const [opened, setOpened] = useState(false);
 
   const open = () => {
@@ -246,30 +275,40 @@ function useEditTodoModalState() {
   };
 }
 
-function TodoOptionDrawer({ todosState, state, noticeSnackbarState }) {
+function TodoOptionDrawer({ status, noticeSnackbarStatus }) {
+  const todosStatus = useTodosStatus();
+  
   const removeTodo = () => {
-    if ( window.confirm(`${state.todoId}번 할일을 삭제하시겠습니까?`) == false ) {
-      state.close();
+    if (window.confirm(`${status.todoId}번 할일을 삭제하시겠습니까?`) == false) {
+      status.close();
       return;
     }
-    
-    todosState.removeTodoById(state.todoId);
-    state.close();
-    noticeSnackbarState.open(`${state.todoId}번 할일이 삭제되었습니다.`, "info");
+
+    todosStatus.removeTodoById(status.todoId);
+    status.close();
+    noticeSnackbarStatus.open(
+      `${status.todoId}번 할일이 삭제되었습니다.`,
+      "info"
+    );
   };
 
-  const editTodoModalState = useEditTodoModalState();
-  
-  const todo = todosState.findTodoById(state.todoId);
+  const editTodoModalStatus = useEditTodoModalStatus();
+
+  const todo = todosStatus.findTodoById(status.todoId);
 
   return (
     <>
-      <EditTodoModal state={editTodoModalState} todosState={todosState} todo={todo} closeDrawer={state.close} noticeSnackbarState={noticeSnackbarState} />
+      <EditTodoModal
+        status={editTodoModalStatus}
+        todo={todo}
+        closeDrawer={status.close}
+        noticeSnackbarStatus={noticeSnackbarStatus}
+      />
       <SwipeableDrawer
         anchor={"bottom"}
         onOpen={() => {}}
-        open={state.opened}
-        onClose={state.close}
+        open={status.opened}
+        onClose={status.close}
       >
         <List className="!py-0">
           <ListItem className="!pt-6 !p-5">
@@ -282,8 +321,7 @@ function TodoOptionDrawer({ todosState, state, noticeSnackbarState }) {
           <Divider />
           <ListItem
             className="!pt-6 !p-5 !items-baseline"
-            button
-            onClick={editTodoModalState.open}
+            onClick={editTodoModalStatus.open}
           >
             <i className="fa-solid fa-pen-to-square"></i>
             &nbsp;
@@ -291,7 +329,6 @@ function TodoOptionDrawer({ todosState, state, noticeSnackbarState }) {
           </ListItem>
           <ListItem
             className="!pt-6 !p-5 !items-baseline"
-            button
             onClick={removeTodo}
           >
             <i className="fa-solid fa-trash-can"></i>
@@ -304,21 +341,24 @@ function TodoOptionDrawer({ todosState, state, noticeSnackbarState }) {
   );
 }
 
-function TodoList({ todosState, noticeSnackbarState }) {
-  const todoOptionDrawerState = useTodoOptionDrawerState();
+function TodoList({ noticeSnackbarStatus }) {
+  const todosStatus = useTodosStatus();
+  const todoOptionDrawerStatus = useTodoOptionDrawerStatus();
 
   return (
     <>
-      <TodoOptionDrawer todosState={todosState} state={todoOptionDrawerState} noticeSnackbarState={noticeSnackbarState} />
+      <TodoOptionDrawer
+        status={todoOptionDrawerStatus}
+        noticeSnackbarStatus={noticeSnackbarStatus}
+      />
       <div className="mt-4 px-4">
         <ul>
-          {todosState.todos.map((todo, index) => (
+          {todosStatus.todos.map((todo, index) => (
             <TodoListItem
               key={todo.id}
               todo={todo}
               index={index}
-              todosState={todosState}
-              openDrawer={todoOptionDrawerState.open}
+              openDrawer={todoOptionDrawerStatus.open}
             />
           ))}
         </ul>
@@ -327,7 +367,9 @@ function TodoList({ todosState, noticeSnackbarState }) {
   );
 }
 
-function NewTodoForm({ todosState, noticeSnackbarState }) {
+function NewTodoForm({ noticeSnackbarStatus }) {
+  const todosStatus = useTodosStatus();
+  
   const onSubmit = (e) => {
     e.preventDefault();
 
@@ -342,10 +384,10 @@ function NewTodoForm({ todosState, noticeSnackbarState }) {
       return;
     }
 
-    const newTodoId = todosState.addTodo(form.content.value);
+    const newTodoId = todosStatus.addTodo(form.content.value);
     form.content.value = "";
     form.content.focus();
-    noticeSnackbarState.open(`${newTodoId}번 할일이 추가되었습니다.`);
+    noticeSnackbarStatus.open(`${newTodoId}번 할일이 추가되었습니다.`);
   };
 
   return (
@@ -369,36 +411,37 @@ function NewTodoForm({ todosState, noticeSnackbarState }) {
   );
 }
 
-function NoticeSnackbar({state}) {
+function NoticeSnackbar({ status }) {
   return (
     <>
       <Snackbar
-        open={state.opened}
-        autoHideDuration={state.autoHideDuration}
-        onClose={state.close}>
-        <Alert severity={state.severity}>{state.msg}</Alert>
+        open={status.opened}
+        autoHideDuration={status.autoHideDuration}
+        onClose={status.close}
+      >
+        <Alert severity={status.severity}>{status.msg}</Alert>
       </Snackbar>
     </>
-  )
+  );
 }
 
-function useNoticeSnackbarState() {
+function useNoticeSnackbarStatus() {
   const [opened, setOpened] = useState(false);
   const [autoHideDuration, setAutoHideDuration] = useState(null);
   const [severity, setSeverity] = useState(null);
   const [msg, setMsg] = useState(null);
-  
+
   const open = (msg, severity = "success", autoHideDuration = 6000) => {
     setOpened(true);
     setMsg(msg);
     setSeverity(severity);
     setAutoHideDuration(autoHideDuration);
-  }
-  
+  };
+
   const close = () => {
     setOpened(false);
-  }
-  
+  };
+
   return {
     opened,
     open,
@@ -406,22 +449,22 @@ function useNoticeSnackbarState() {
     autoHideDuration,
     severity,
     msg
-  }
+  };
 }
 
 function App() {
-  const todosState = useTodosState();
-  const noticeSnackbarState = useNoticeSnackbarState();
+  const todosStatus = useTodosStatus();
+  const noticeSnackbarStatus = useNoticeSnackbarStatus();
 
   useEffect(() => {
-    todosState.addTodo("운동\n스트레칭\n유산소\n상체\n하체볼륨 트레이닝");
-    todosState.addTodo("명상");
-    todosState.addTodo("공부");
+    todosStatus.addTodo("운동\n스트레칭\n유산소\n상체\n하체볼륨 트레이닝");
+    todosStatus.addTodo("명상");
+    todosStatus.addTodo("공부");
   }, []);
 
   return (
     <>
-      {/* <AppBar position="fixed">
+      <AppBar position="fixed">
         <Toolbar>
           <div className="flex-1"></div>
           <span className="font-bold">HAPPY NOTE</span>
@@ -429,10 +472,13 @@ function App() {
         </Toolbar>
       </AppBar>
       <Toolbar />
-      <NoticeSnackbar state={noticeSnackbarState} />
-      <NewTodoForm todosState={todosState} noticeSnackbarState={noticeSnackbarState} />
-      <TodoList todosState={todosState} noticeSnackbarState={noticeSnackbarState}  /> */}
-      <RecoilEx />
+      <NoticeSnackbar status={noticeSnackbarStatus} />
+      <NewTodoForm
+        noticeSnackbarStatus={noticeSnackbarStatus}
+      />
+      <TodoList
+        noticeSnackbarStatus={noticeSnackbarStatus}
+      />
     </>
   );
 }
@@ -480,10 +526,12 @@ function Root() {
   }, []);
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <App />
-    </ThemeProvider>
+    <RecoilRoot>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <App />
+      </ThemeProvider>
+    </RecoilRoot>
   );
 }
 
