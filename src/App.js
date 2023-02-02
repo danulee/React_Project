@@ -42,47 +42,47 @@ const Alert = React.forwardRef((props, ref) => {
   return <MuiAlert {...props} ref={ref} variant="filled" />;
 });
 
-const { persistAtom:persistAtomTodos } = recoilPersist({
-  key:"persistAtomTodos"
+const { persistAtom: persistAtomTodos } = recoilPersist({
+  key: "persistAtomTodos"
 });
 
-const { persistAtom:persistAtomLastTodoId } = recoilPersist({
-  key:"persistAtomLastTodoId"
+const { persistAtom: persistAtomLastTodoId } = recoilPersist({
+  key: "persistAtomLastTodoId"
 });
 
 const todosAtom = atom({
   key: "app/todosAtom",
   default: [
     {
-      id:3,
-      regDate:"2022-04-27 12:12:12",
-      content:"명상",
+      id: 3,
+      regDate: "2022-04-27 12:12:12",
+      content: "명상"
     },
     {
-      id:2,
-      regDate:"2022-04-27 12:12:12",
-      content:"공부",
+      id: 2,
+      regDate: "2022-04-27 12:12:12",
+      content: "공부"
     },
     {
-      id:1,
-      regDate:"2022-04-27 12:12:12",
-      content:"운동",
+      id: 1,
+      regDate: "2022-04-27 12:12:12",
+      content: "운동"
     }
   ],
-  effects_UNSTABLE: [persistAtomTodos],
+  effects_UNSTABLE: [persistAtomTodos]
 });
 
 const lastTodoIdAtom = atom({
   key: "app/lastTodoIdAtom",
   default: 3,
-  effects_UNSTABLE: [persistAtomLastTodoId],
+  effects_UNSTABLE: [persistAtomLastTodoId]
 });
 
 function useTodosStatus() {
   const [todos, setTodos] = useRecoilState(todosAtom);
   const [lastTodoId, setLastTodoId] = useRecoilState(lastTodoIdAtom);
   const lastTodoIdRef = useRef(lastTodoId);
-  
+
   lastTodoIdRef.current = lastTodoId;
 
   const addTodo = (newContent) => {
@@ -224,14 +224,9 @@ function useTodoOptionDrawerStatus() {
   };
 }
 
-function EditTodoModal({
-  status,
-  todo,
-  closeDrawer,
-  noticeSnackbarStatus
-}) {
+function EditTodoModal({ status, todo, closeDrawer, noticeSnackbarStatus }) {
   const todosStatus = useTodosStatus();
-  
+
   const close = () => {
     status.close();
     closeDrawer();
@@ -305,7 +300,7 @@ function useEditTodoModalStatus() {
 
 function TodoOptionDrawer({ status, noticeSnackbarStatus }) {
   const todosStatus = useTodosStatus();
-  
+
   const removeTodo = () => {
     if (window.confirm(`${status.todoId}번 할일을 삭제하시겠습니까?`) == false) {
       status.close();
@@ -350,20 +345,20 @@ function TodoOptionDrawer({ status, noticeSnackbarStatus }) {
           <ListItem
             className="!pt-6 !p-5 !items-baseline"
             button
-            onClick={removeTodo}
-          >
-            <i className="fa-solid fa-trash-can"></i>
-            &nbsp;
-            <span>삭제</span>
-          </ListItem>
-          <ListItem
-            className="!pt-6 !p-5 !items-baseline"
-            button
             onClick={editTodoModalStatus.open}
           >
             <i className="fa-solid fa-pen-to-square"></i>
             &nbsp;
             <span>수정</span>
+          </ListItem>
+          <ListItem
+            className="!pt-6 !p-5 !items-baseline"
+            button
+            onClick={removeTodo}
+          >
+            <i className="fa-solid fa-trash-can"></i>
+            &nbsp;
+            <span>삭제</span>
           </ListItem>
         </List>
       </SwipeableDrawer>
@@ -399,7 +394,7 @@ function TodoList({ noticeSnackbarStatus }) {
 
 function NewTodoForm({ noticeSnackbarStatus }) {
   const todosStatus = useTodosStatus();
-  
+
   const onSubmit = (e) => {
     e.preventDefault();
 
@@ -455,21 +450,40 @@ function NoticeSnackbar({ status }) {
   );
 }
 
+const noticeSnackbarInfoAtom = atom({
+  key: "app/noticeSnackbarInfoAtom",
+  default: {
+    opened: false,
+    autoHideDuration: 0,
+    severity: "",
+    msg: ""
+  }
+});
+
 function useNoticeSnackbarStatus() {
-  const [opened, setOpened] = useState(false);
-  const [autoHideDuration, setAutoHideDuration] = useState(null);
-  const [severity, setSeverity] = useState(null);
-  const [msg, setMsg] = useState(null);
+  const [noticeSnackbarInfo, setNoticeSnackbarInfo] = useRecoilState(
+    noticeSnackbarInfoAtom
+  );
+
+  const opened = noticeSnackbarInfo.opened;
+  const autoHideDuration = noticeSnackbarInfo.autoHideDuration;
+  const severity = noticeSnackbarInfo.severity;
+  const msg = noticeSnackbarInfo.msg;
 
   const open = (msg, severity = "success", autoHideDuration = 6000) => {
-    setOpened(true);
-    setMsg(msg);
-    setSeverity(severity);
-    setAutoHideDuration(autoHideDuration);
+    setNoticeSnackbarInfo({
+      opened: true,
+      msg,
+      severity,
+      autoHideDuration
+    });
   };
 
   const close = () => {
-    setOpened(false);
+    setNoticeSnackbarInfo({
+      ...noticeSnackbarInfo,
+      opened: false
+    });
   };
 
   return {
@@ -497,12 +511,8 @@ function App() {
       </AppBar>
       <Toolbar />
       <NoticeSnackbar status={noticeSnackbarStatus} />
-      <NewTodoForm
-        noticeSnackbarStatus={noticeSnackbarStatus}
-      />
-      <TodoList
-        noticeSnackbarStatus={noticeSnackbarStatus}
-      />
+      <NewTodoForm noticeSnackbarStatus={noticeSnackbarStatus} />
+      <TodoList noticeSnackbarStatus={noticeSnackbarStatus} />
     </>
   );
 }
